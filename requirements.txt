@@ -1,0 +1,8 @@
+langchain
+langchain_community
+langchain_core
+langchain_ollama
+transformers
+huggingface_hub
+streamlit
+torch

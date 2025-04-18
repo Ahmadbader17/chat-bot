@@ -38,13 +38,15 @@ st.markdown("""
     /* Chat container */
     .stChatMessage {
         max-width: 800px;
+        width: 100%;
         margin: 0 auto 12px auto;
         padding: 16px;
         border-radius: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         word-wrap: break-word;
-        white-space: pre-wrap;
+        white-space: normal;
         line-height: 1.5;
+        display: block;
     }
 
     /* User message styling */
@@ -53,10 +55,20 @@ st.markdown("""
         border-left: 3px solid #0096CF;
     }
 
-    /* AI message styling */
+    /* AI message styling - fixed width issue */
     .stChatMessage[data-testid="chat-message-ai"] {
         background-color: #ffffff;
         border-left: 3px solid #7f58af;
+        width: 100%;
+        display: block;
+    }
+
+    /* Fix for potential line break issues */
+    .stChatMessage[data-testid="chat-message-ai"] p {
+        white-space: normal;
+        word-break: break-word;
+        display: block;
+        width: 100%;
     }
 
     /* Sidebar styling */
@@ -104,20 +116,21 @@ st.markdown("""
         visibility: hidden;
     }
     
-    /* Custom progress bar for thinking animation */
-    .thinking-animation {
-        width: 100%;
-        height: 3px;
-        background: linear-gradient(to right, #7f58af, #c969a6);
-        background-size: 200% 100%;
-        animation: thinking-gradient 2s linear infinite;
-        border-radius: 3px;
-        margin: 10px 0;
+    /* Cursor animation for typing effect */
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0; }
+        100% { opacity: 1; }
     }
     
-    @keyframes thinking-gradient {
-        0% {background-position: 100% 0;}
-        100% {background-position: -100% 0;}
+    .typing-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 20px;
+        background-color: #7f58af;
+        margin-left: 2px;
+        animation: blink 1s infinite;
+        vertical-align: middle;
     }
     
     /* Message divider */
@@ -143,6 +156,7 @@ st.markdown("""
         padding: 12px !important;
         border: 1px solid #e1e4e8 !important;
         overflow-x: auto !important;
+        width: 100% !important;
     }
     
     code {
@@ -243,6 +257,17 @@ with st.sidebar:
     else:
         system_prompt = system_prompt_options[system_prompt_selection]
     
+    # Typing speed control
+    st.markdown("##### Display Settings")
+    typing_speed = st.slider(
+        "Typing speed:",
+        min_value=10,
+        max_value=100,
+        value=40,
+        step=10,
+        help="Words per minute for the typing animation"
+    )
+    
     st.markdown("---")
     
     # Display feature information
@@ -318,6 +343,14 @@ def generate_ai_response(prompt_chain):
     response_time = time.time() - start_time
     return response, response_time
 
+# Function to split response into chunks for typing animation
+def chunk_response(text):
+    # Split text into words and punctuation
+    import re
+    # This regex splits on spaces but keeps punctuation attached to words
+    chunks = re.findall(r'\S+\s*', text)
+    return chunks
+
 # Initialize session state
 if "message_log" not in st.session_state:
     st.session_state.message_log = []
@@ -370,38 +403,70 @@ if user_query:
     st.session_state.message_log.append({"role": "user", "content": user_query})
     st.session_state.timestamps.append(current_time)
     
-    # Show thinking animation and generate response
-    with st.chat_message("ai"):
-        with st.container():
-            st.markdown("<div class='thinking-animation'></div>", unsafe_allow_html=True)
-            thinking_placeholder = st.empty()
-            
-            # Display thinking messages for a more engaging experience
-            thinking_messages = [
-                "Analyzing your request...",
-                "Processing information...",
-                "Considering relevant context...",
-                "Formulating response..."
-            ]
-            
-            # Show a sequence of thinking messages
-            for msg in thinking_messages:
-                thinking_placeholder.markdown(f"*{msg}*")
-                time.sleep(0.7)
-            
-            # Generate the actual response
-            prompt_chain = build_prompt_chain()
-            ai_response, response_time = generate_ai_response(prompt_chain)
-            
-            # Clear the thinking animation
-            thinking_placeholder.empty()
+    # Rerun to display user message
+    st.rerun()
+
+# Check if we need to generate a response (after rerun)
+if st.session_state.message_log and st.session_state.message_log[-1]["role"] == "user":
+    # Get the response from LLM
+    prompt_chain = build_prompt_chain()
+    ai_response, response_time = generate_ai_response(prompt_chain)
     
-    # Add AI response and timestamp
-    current_time = datetime.datetime.now().strftime("%I:%M %p")
+    # Calculate typing delays based on user preference
+    words_per_minute = typing_speed
+    average_word_length = 5  # Average English word length
+    characters_per_minute = words_per_minute * average_word_length
+    
+    # Create AI message container for typing animation
+    with st.chat_message("ai"):
+        message_placeholder = st.empty()
+        
+        # Create chunks for realistic typing
+        chunks = chunk_response(ai_response)
+        displayed_text = ""
+        
+        # Display chunks with typing animation
+        for i, chunk in enumerate(chunks):
+            displayed_text += chunk
+            
+            # Format code blocks in displayed text
+            formatted_text = format_code_blocks(displayed_text)
+            
+            # Add blinking cursor during typing
+            if i < len(chunks) - 1:
+                message_placeholder.markdown(f"{formatted_text}<span class='typing-cursor'></span>", unsafe_allow_html=True)
+            else:
+                message_placeholder.markdown(formatted_text)
+            
+            # Calculate delay based on chunk length and typing speed
+            # Adjusted for more natural typing feel
+            chunk_length = len(chunk)
+            delay = chunk_length / (characters_per_minute / 60)
+            
+            # Add some randomness to the typing speed
+            delay *= random.uniform(0.8, 1.2)
+            
+            # Caps at reasonable delays
+            delay = min(max(delay, 0.01), 0.3)
+            
+            time.sleep(delay)
+        
+        # Add timestamp
+        current_time = datetime.datetime.now().strftime("%I:%M %p")
+        st.markdown(f"<div class='message-timestamp'>{current_time}</div>", unsafe_allow_html=True)
+        
+        # Add feedback buttons
+        st.markdown("""
+        <div class='feedback-container'>
+            <button class='feedback-button'>👍</button>
+            <button class='feedback-button'>👎</button>
+            <button class='feedback-button'>Copy</button>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Save the complete response to session state
     st.session_state.message_log.append({"role": "ai", "content": ai_response})
     st.session_state.timestamps.append(current_time)
-    
-    st.rerun()
 
 # Add information footer
 st.markdown("""

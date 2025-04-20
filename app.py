@@ -210,13 +210,10 @@ with st.sidebar:
     st.markdown("##### Model Selection")
     selected_model = st.selectbox(
         "Choose your assistant model:",
-        ["gemma3:1b", "gemma3:9b", "llama3:8b", "mistral:7b"],
+        ["gemma3:1b"],
         index=0,
         format_func=lambda x: {
-            "gemma3:1b": "Gemma 3 (1B) - Fast responses",
-            "gemma3:9b": "Gemma 3 (9B) - Balanced assistant",
-            "llama3:8b": "Llama 3 (8B) - Creative assistant",
-            "mistral:7b": "Mistral (7B) - Analytical assistant"
+            "gemma3:1b": "Gemma 3 (1B) - Fast responses"
         }[x]
     )
     

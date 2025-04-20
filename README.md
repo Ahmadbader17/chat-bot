@@ -1,6 +1,13 @@
 # 💬 Chat-Bot 
 
+> ⚡️ Lightweight local AI chatbot using Gemma 3B + Streamlit
+
+[![Chat-Bot Demo](chatbot.gif)]  # (https://example.com/fullvideo.mp4)
+<br>
+🎥 **Click the preview to watch the full HD demo video**
+
 This is a lightweight, local AI chatbot powered by **Gemma 3B** via **Ollama**, built with **Python** and **Streamlit**, and developed in **VS Code**.
+
 
 ## 🚀 Features
 

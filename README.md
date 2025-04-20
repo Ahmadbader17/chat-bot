@@ -2,7 +2,7 @@
 
 > ⚡️ Lightweight local AI chatbot using Gemma 3B + Streamlit
 
-[![Chat-Bot Demo](chatbot.gif)]  # (https://example.com/fullvideo.mp4)
+[![Chat-Bot Demo](chatbot.gif)]
 <br>
 🎥 **Click the preview to watch the full HD demo video**
 

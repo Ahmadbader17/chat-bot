@@ -5,6 +5,7 @@
 [![Chat-Bot Demo](chatbot.gif)]
 <br>
 🎥 **Click the preview to watch the full HD demo video**
+Youtube Link ~ https://youtu.be/xXBXvU2aVWI 
 
 This is a lightweight, local AI chatbot powered by **Gemma 3B** via **Ollama**, built with **Python** and **Streamlit**, and developed in **VS Code**.
 
